@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postman Clone</title>
+    <style>
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --bg-tertiary: #333333;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent: #0078d4;
+            --accent-hover: #2b88d8;
+            --border: #3e3e42;
+            --success: #4caf50;
+            --error: #f44336;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: var(--bg-secondary);
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            font-weight: normal;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            height: calc(100vh - 50px);
+        }
+
+        .request-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .response-panel {
+            flex: 1;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        select, input, textarea {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: 1px solid var(--accent);
+            border-color: var(--accent);
+        }
+
+        input {
+            flex: 1;
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+
+        .tab {
+            padding: 8px 15px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+        }
+
+        .tab.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea.code-editor {
+            width: 100%;
+            height: 300px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            resize: vertical;
+        }
+
+        .response-header {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            font-size: 0.9rem;
+        }
+        
+        .status-badge.success { color: var(--success); }
+        .status-badge.error { color: var(--error); }
+
+        .response-body {
+            padding: 10px;
+            overflow: auto;
+            flex: 1;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        /* Helper for JSON syntax highlighting (simple) */
+        .string { color: #ce9178; }
+        .number { color: #b5cea8; }
+        .boolean { color: #569cd6; }
+        .null { color: #569cd6; }
+        .key { color: #9cdcfe; }
+
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Flux Client</h1>
+</div>
+
+<div class="main-container">
+    <!-- Left Panel: Request Configuration -->
+    <div class="request-panel">
+        <div class="input-group">
+            <select id="method">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+                <option value="PATCH">PATCH</option>
+            </select>
+            <input type="text" id="url" placeholder="Enter request URL" value="http://localhost:3000/">
+            <button onclick="sendRequest()">Send</button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('body')">Body</div>
+            <div class="tab" onclick="switchTab('headers')">Headers</div>
+        </div>
+
+        <div id="body-tab" class="tab-content active">
+            <textarea id="request-body" class="code-editor" placeholder="{ &quot;key&quot;: &quot;value&quot; }"></textarea>
+        </div>
+        
+        <div id="headers-tab" class="tab-content">
+            <textarea id="request-headers" class="code-editor" placeholder="{ &quot;Content-Type&quot;: &quot;application/json&quot; }">{ "Content-Type": "application/json" }</textarea>
+        </div>
+    </div>
+
+    <!-- Right Panel: Response -->
+    <div class="response-panel">
+        <div class="response-header">
+            <span id="status-display">Status: -</span>
+            <span id="time-display">Time: -</span>
+        </div>
+        <div class="response-body">
+            <pre id="response-content"></pre>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        event.target.classList.add('active');
+        document.getElementById(tabName + '-tab').classList.add('active');
+    }
+
+    async function sendRequest() {
+        const method = document.getElementById('method').value;
+        const url = document.getElementById('url').value;
+        const bodyText = document.getElementById('request-body').value;
+        const headersText = document.getElementById('request-headers').value;
+        
+        const responseContent = document.getElementById('response-content');
+        const statusDisplay = document.getElementById('status-display');
+        const timeDisplay = document.getElementById('time-display');
+
+        responseContent.innerText = 'Loading...';
+        statusDisplay.innerText = 'Status: -';
+        statusDisplay.className = 'status-badge';
+
+        let body = null;
+        let headers = {};
+
+        try {
+            if (bodyText && method !== 'GET') {
+                body = JSON.parse(bodyText);
+            }
+            if (headersText) {
+                headers = JSON.parse(headersText);
+            }
+        } catch (e) {
+            alert("Invalid JSON in Body or Headers");
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    method,
+                    url,
+                    headers,
+                    body
+                })
+            });
+
+            const data = await res.json();
+            
+            statusDisplay.innerText = `Status: ${data.status_code || 'Error'}`;
+            if (data.status_code >= 200 && data.status_code < 300) {
+                statusDisplay.classList.add('success');
+            } else {
+                statusDisplay.classList.add('error');
+            }
+            
+            timeDisplay.innerText = `Time: ${data.time}`;
+
+            if (data.body && typeof data.body === 'object') {
+                 responseContent.innerHTML = syntaxHighlight(data.body);
+            } else {
+                 responseContent.innerText = data.body || data.error;
+            }
+
+        } catch (err) {
+            responseContent.innerText = "Error connecting to backend: " + err;
+        }
+    }
+
+    function syntaxHighlight(json) {
+        if (typeof json != 'string') {
+             json = JSON.stringify(json, undefined, 2);
+        }
+        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+            var cls = 'number';
+            if (/^"/.test(match)) {
+                if (/:$/.test(match)) {
+                    cls = 'key';
+                } else {
+                    cls = 'string';
+                }
+            } else if (/true|false/.test(match)) {
+                cls = 'boolean';
+            } else if (/null/.test(match)) {
+                cls = 'null';
+            }
+            return '<span class="' + cls + '">' + match + '</span>';
+        });
+    }
+</script>
+
+</body>
+</html>

@@ -8,8 +8,11 @@ app.use(express.json());
 
 
 app.get("/get", (req, res) => {
-    res.send(message)
-    console.log("success")
+    res.json({
+        success: true,
+        message: "User deleted successfully",
+        userId
+      });
 })
 
 app.post("/post", (req, res) => {
@@ -34,10 +37,17 @@ app.put("/user/:id", (req, res) => {
   });
 });
 
-app.delete("/delete", (req, res) => {
-    res.send("deleted")
-    console.log("deleted")
-})
+app.delete("/delete/:id", (req, res) => {
+    const userId = req.params.id;
+    console.log("User ID:", userId);
+    res.json({
+      success: true,
+      message: "User deleted successfully",
+      userId
+    });
+  });
+
+
 
 app.listen(3000, () => {
     console.log("server running on port 3000")

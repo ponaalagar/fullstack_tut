@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+</head>
+
+<body>
+    <h1>Dashboard</h1>
+    <div id="status">Verifying access...</div>
+    <button id="logoutBtn" style="display:none;" onclick="logout()">Logout</button>
+
+    <script>
+        async function checkAccess() {
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                alert("No token found. Redirecting to login.");
+                window.location.href = "/login.html";
+                return;
+            }
+
+            try {
+                const response = await fetch("/dashboard", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById("status").innerText = "Authorized: Welcome to the Protected Dashboard!";
+                    document.getElementById("logoutBtn").style.display = "block";
+                } else {
+                    alert("Session expired or unauthorized. Redirecting...");
+                    localStorage.removeItem("token");
+                    window.location.href = "/login.html";
+                }
+            } catch (error) {
+                console.error("Error verifying token:", error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+        }
+
+        checkAccess();
+    </script>
+</body>
+
+</html>

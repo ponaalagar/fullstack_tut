@@ -334,8 +334,8 @@
                         </div>
                     </div>
                     <div class="card-actions">
-                        <button onclick="editUser('${user.id}')" class="btn-edit">Edit</button>
-                        <button onclick="deleteUser('${user.id}')" class="btn-delete">Delete</button>
+                        <button onclick="editUser('${user._id}')" class="btn-edit">Edit</button>
+                        <button onclick="deleteUser('${user._id}')" class="btn-delete">Delete</button>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -379,11 +379,11 @@
 
         // Edit User mode
         function editUser(id) {
-            const user = allUsers.find(u => u.id === id);
+            const user = allUsers.find(u => u._id === id);
             if (!user) return;
 
             // Populate fields
-            userIdField.value = user.id;
+            userIdField.value = user._id;
             document.getElementById('name').value = user.name;
             document.getElementById('college').value = user.college;
             document.getElementById('role').value = user.role;

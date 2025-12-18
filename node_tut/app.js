@@ -1,8 +1,9 @@
 import express from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 import { User } from "./models/User.js"; // Import from models.js
-
+import { credentials } from "./models/Credentials.js";
 
 const app = express();
 app.use(cors());
@@ -26,6 +27,45 @@ app.post("/users", async (req, res) => {
   }
 });
 
+// Registration Route
+app.post("/register", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new credentials({ username, password: hashedPassword });
+    await newUser.save();
+
+    res.status(201).json({ success: true, message: "User registered successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Login Route
+app.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await credentials.findOne({ username });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Compare hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ user: user.username }, "secret", { expiresIn: "1h" });
+    res.json({ success: true, message: "Login successful", token });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 
 app.get("/users", async (req, res) => {
   try {
@@ -37,10 +77,6 @@ app.get("/users", async (req, res) => {
   }
 });
 
-app.post("/login", async (req, res) => {
-  const token = jwt.sign({ user: req.body.username }, "secret", { expiresIn: "1h" });
-  res.json({ success: true, message: "Login successful", token });
-})
 
 //protected route
 app.get("/dashboard", async (req, res) => {
@@ -54,6 +90,31 @@ app.get("/dashboard", async (req, res) => {
   try {
     const decoded = jwt.verify(token, "secret");
     res.json({ success: true, message: "Authorized" });
+    res.redirect("/index.html");
+
+
+
+
+  } catch (error) {
+    res.status(401).json({ success: false, message: "Unauthorized" });
+  }
+});
+
+//protected route
+app.get("/", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, "secret");
+    res.json({ success: true, message: "Authorized" });
+    res.redirect("/index.html");
+
+
   } catch (error) {
     res.status(401).json({ success: false, message: "Unauthorized" });
   }

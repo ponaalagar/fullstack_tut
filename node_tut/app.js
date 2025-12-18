@@ -1,6 +1,8 @@
 import express from "express";
+import cors from "cors";
 
 const app = express();
+app.use(cors());
 app.use(express.static("public"));
 app.use(express.json());
 
@@ -8,14 +10,15 @@ let list = [];
 
 // Create (POST)
 app.post("/users", (req, res) => {
-  const { name, college, role } = req.body;
-  if (!name || !college || !role) {
+  const { name, college, role ,age } = req.body;
+  if (!name || !college || !role || !age) {
     return res.status(400).json({ success: false, message: "All fields are required" });
   }
-
+  
   const newUser = {
     id: Date.now().toString(),
     name,
+    age,
     college,
     role
   };
@@ -46,7 +49,7 @@ app.get("/users/:id", (req, res) => {
 // Update (PUT)
 app.put("/users/:id", (req, res) => {
   const { id } = req.params;
-  const { name, college, role } = req.body;
+  const { name, college, role, age } = req.body;
 
   const userIndex = list.findIndex((u) => u.id === id);
 
@@ -59,7 +62,8 @@ app.put("/users/:id", (req, res) => {
     ...list[userIndex],
     name: name || list[userIndex].name,
     college: college || list[userIndex].college,
-    role: role || list[userIndex].role
+    role: role || list[userIndex].role,
+    age: age || list[userIndex].age
   };
 
   res.json({ success: true, message: "User updated", data: list[userIndex] });

@@ -261,6 +261,10 @@
                         <input type="text" id="college" placeholder="e.g. MIT" required>
                     </div>
                     <div class="input-group">
+                        <label for="age">Age</label>
+                        <input type="text" id="age" placeholder="e.g. 20" required>
+                    </div>
+                    <div class="input-group">
                         <label for="role">Role / Major</label>
                         <input type="text" id="role" placeholder="e.g. CS Student" required>
                     </div>
@@ -271,7 +275,13 @@
                 </div>
             </form>
         </div>
-
+        <!-- Filter Section -->
+        <div class="form-card" style="margin-bottom: 2rem; padding: 1.5rem;">
+            <div class="input-group">
+                <label for="ageFilter">Filter by Age</label>
+                <input type="number" id="ageFilter" placeholder="Enter age to filter (e.g. 20)" oninput="filterUsers()">
+            </div>
+        </div>
         <!-- Users Grid -->
         <div id="usersGrid" class="users-grid">
             <!-- Cards will be injected here -->
@@ -285,6 +295,7 @@
         const submitBtn = document.getElementById('submitBtn');
         const cancelBtn = document.getElementById('cancelBtn');
         const userIdField = document.getElementById('userId');
+        const ageFilter = document.getElementById('ageFilter');
 
         let allUsers = [];
 
@@ -294,7 +305,8 @@
                 const res = await fetch(API_URL);
                 const data = await res.json();
                 allUsers = data.data; // Store for edit lookup
-                renderUsers(allUsers);
+                // Re-apply filter if exists
+                filterUsers();
             } catch (err) {
                 console.error('Error fetching users:', err);
             }
@@ -318,6 +330,7 @@
                         <div class="user-meta">
                             <span>🏫 ${user.college}</span>
                             <span>🎓 ${user.role}</span>
+                            <span>🎓 ${user.age}</span>
                         </div>
                     </div>
                     <div class="card-actions">
@@ -336,7 +349,8 @@
             const userData = {
                 name: document.getElementById('name').value,
                 college: document.getElementById('college').value,
-                role: document.getElementById('role').value
+                role: document.getElementById('role').value,
+                age: document.getElementById('age').value
             };
 
             const id = userIdField.value;
@@ -373,6 +387,7 @@
             document.getElementById('name').value = user.name;
             document.getElementById('college').value = user.college;
             document.getElementById('role').value = user.role;
+            document.getElementById('age').value = user.age;
 
             // Change UI state
             submitBtn.textContent = 'Update Student';
@@ -390,10 +405,23 @@
             cancelBtn.style.display = 'none';
         }
 
+
+        function filterUsers() {
+            const age = ageFilter.value.trim();
+
+            if (!age) {
+                renderUsers(allUsers);
+                return;
+            }
+
+            // Using loose comparison to match string/number
+            const filteredUsers = allUsers.filter(u => u.age == age);
+            renderUsers(filteredUsers);
+        }
+
+
         // Delete User
         async function deleteUser(id) {
-            if (!confirm('Are you sure you want to delete this student?')) return;
-
             try {
                 const res = await fetch(`${API_URL}/${id}`, {
                     method: 'DELETE'

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Health Check</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            padding: 2rem;
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .test-card {
+            background: #1e293b;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid #334155;
+        }
+
+        .status {
+            font-weight: bold;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .pending {
+            color: #fbbf24;
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .success {
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .error {
+            color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background: #4f46e5;
+        }
+
+        pre {
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>System Component Check</h1>
+    <p>Automated verification of CRUD components.</p>
+    <button onclick="runTests()">Run All Tests</button>
+
+    <div id="results" style="margin-top: 2rem;"></div>
+
+    <script>
+        const API_URL = '/users';
+        const resultsDiv = document.getElementById('results');
+
+        function log(step, status, details = '') {
+            const el = document.createElement('div');
+            el.className = 'test-card';
+            el.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                    <strong>${step}</strong>
+                    <span class="status ${status.toLowerCase()}">${status}</span>
+                </div>
+                ${details ? `<pre>${JSON.stringify(details, null, 2)}</pre>` : ''}
+            `;
+            resultsDiv.appendChild(el);
+        }
+
+        async function runTests() {
+            resultsDiv.innerHTML = '';
+            let userId = null;
+
+            try {
+                // 1. TEST CREATE
+                const newUser = { name: "TestBot", college: "Automated Univ", role: "Verifier" };
+                const createRes = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newUser)
+                });
+                const createData = await createRes.json();
+
+                if (createRes.ok && createData.success) {
+                    userId = createData.data.id;
+                    log('1. Component: CREATE (POST)', 'SUCCESS', createData.data);
+                } else {
+                    throw new Error('Create failed');
+                }
+
+                // 2. TEST READ
+                const readRes = await fetch(`${API_URL}/${userId}`);
+                const readData = await readRes.json();
+
+                if (readRes.ok && readData.data.name === "TestBot") {
+                    log('2. Component: READ (GET)', 'SUCCESS', readData.data);
+                } else {
+                    throw new Error('Read failed');
+                }
+
+                // 3. TEST UPDATE
+                const updateRes = await fetch(`${API_URL}/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: "Verified Bot" })
+                });
+                const updateData = await updateRes.json();
+
+                if (updateRes.ok && updateData.data.role === "Verified Bot") {
+                    log('3. Component: UPDATE (PUT)', 'SUCCESS', updateData.data);
+                } else {
+                    throw new Error('Update failed');
+                }
+
+                // 4. TEST DELETE
+                const deleteRes = await fetch(`${API_URL}/${userId}`, { method: 'DELETE' });
+                const deleteData = await deleteRes.json();
+
+                if (deleteRes.ok && deleteData.success) {
+                    log('4. Component: DELETE (DELETE)', 'SUCCESS', { message: "User deleted" });
+                } else {
+                    throw new Error('Delete failed');
+                }
+
+                // 5. VERIFY DELETION
+                const verifyRes = await fetch(`${API_URL}/${userId}`);
+                if (verifyRes.status === 404) {
+                    log('5. Component: VERIFICATION (404 Check)', 'SUCCESS', { message: "User not found as expected" });
+                } else {
+                    throw new Error('Deletion verification failed - User still exists');
+                }
+
+                log('FINAL RESULT', 'SUCCESS', { message: "All components are working correctly!" });
+
+            } catch (err) {
+                log('TEST FAILED', 'ERROR', err.message);
+                console.error(err);
+            }
+        }
+
+        // Auto-run on load
+        window.onload = runTests;
+    </script>
+</body>
+
+</html>

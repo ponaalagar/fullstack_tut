@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { User } from "./models/User.js"; // Import from models.js
+import { User } from "./models/User.js"; 
 import { credentials } from "./models/Credentials.js";
 
 const app = express();
@@ -22,8 +22,11 @@ app.post("/users", async (req, res) => {
     await newUser.save();
 
     res.status(201).json({ success: true, message: "User saved to DB!", data: newUser });
+
   } catch (error) {
+
     res.status(500).json({ success: false, message: error.message });
+
   }
 });
 
@@ -90,10 +93,6 @@ app.get("/dashboard", async (req, res) => {
   try {
     const decoded = jwt.verify(token, "secret");
     res.json({ success: true, message: "Authorized" });
-    res.redirect("/index.html");
-
-
-
 
   } catch (error) {
     res.status(401).json({ success: false, message: "Unauthorized" });
@@ -112,7 +111,6 @@ app.get("/", async (req, res) => {
   try {
     const decoded = jwt.verify(token, "secret");
     res.json({ success: true, message: "Authorized" });
-    res.redirect("/index.html");
 
 
   } catch (error) {
